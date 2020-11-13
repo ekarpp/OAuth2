@@ -25,6 +25,18 @@ app.get("/", (req, res) => {
   res.sendFile("index.html", {root: __dirname});
 });
 
+app.get("/redir", (req, res) => {
+  if ("code" in req.query === false)
+  {
+    res.redirect("/");
+    return;
+  }
+
+  const code = req.query.code;
+  res.send(`authorization code is: <input type="text" value="${code}" readonly/> </br>
+            <a href="/">Go home</a>`);
+});
+
 app.get("/api/new_client", (req, res) => {
   const t = Date.now().toString();
   const h = hash(t);
