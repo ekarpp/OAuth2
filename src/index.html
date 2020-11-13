@@ -7,6 +7,18 @@
   <button type="button" onclick="new_client_onclick()">New client</button>
 </body>
 
+<form action="/auth">
+  <input type="hidden" id="response_type" name="response_type" value="code"/>
+
+  <label for="redirect_uri">Redirect URI:</label> </br>
+  <input type="text" id="redirect_uri" name="redirect_uri" value="http://localhost:8080/redir"/> </br>
+
+  <label for="client_id">Client id:</label> </br>
+  <input type="text" id="client_id" name="client_id"/> </br>
+
+  <input type="submit" value="Get authorization"/>
+</form>
+
 
 <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
 <script>

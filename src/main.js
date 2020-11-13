@@ -1,3 +1,6 @@
+// how many milliseconds are authorization codes valid for
+const AUTH_EXPIRES = 600 * 1000;
+
 const express = require("express");
 const app = express();
 
@@ -23,12 +26,12 @@ app.get("/", (req, res) => {
 });
 
 app.get("/api/new_client", (req, res) => {
-  const t = (new Date).getTime().toString();
+  const t = Date.now().toString();
   const h = hash(t);
   pool.query(
       "INSERT INTO Client VALUES (?)",
-      [h]
-    )
+      [ h ]
+  )
     .then(result => {
       console.log(result);
       res.send({client_id: h});
@@ -39,7 +42,56 @@ app.get("/api/new_client", (req, res) => {
 });
 
 app.get("/auth", (req, res) => {
-  res.send("AUTH")
+  const query = req.query;
+
+  if ("client_id" in query === false) {
+    res.send("client_id missing");
+  }
+  const client_id = query.client_id;
+
+  pool.query(
+    "SELECT client_id FROM Client WHERE client_id=?",
+    [ client_id ]
+  )
+    .then(rows => {
+      if (rows.length == 0) {
+        res.send("invalid client_id");
+        return;
+      }
+
+      if ("redirect_uri" in query === false) {
+        res.send("redirect_uri missing");
+      }
+      const redirect = query.redirect_uri;
+
+      // verify uri is valid
+
+      if ("response_type" in query === false
+          || query.response_type !== "code") {
+        res.redirect(`${redirect}?error=invalid_request`);
+        return;
+      }
+
+      // use sha256(time + url) as the code
+      const m = `${Date.now()}${req.url}`;
+      const code = hash(m);
+      const expires = Date.now() + AUTH_EXPIRES;
+
+      pool.query(
+        "INSERT INTO Auth VALUES (?, ?, ?)",
+        [ code, client_id, expires ]
+      )
+        .then(result => {
+          console.log(result);
+          res.redirect(`${redirect}?code=${code}`);
+        })
+        .catch(err => {
+          throw err;
+        });
+    })
+    .catch(err => {
+      throw err;
+    });
 });
 
 app.listen(8080);
