@@ -1,13 +1,13 @@
 // how many milliseconds are authorization codes valid for
-const AUTH_EXPIRES = 600 * 1000;
+const AUTH_EXPIRE = 600 * 1000;
 
 const express = require("express");
 const app = express();
 
 const crypto = require("crypto");
 
-const mariadb = require("mariadb");
-const pool = mariadb.createPool({
+const dbi = require("./db.js");
+const DB = new dbi({
   host: "db",
   user: "node",
   password: "node",
@@ -26,24 +26,22 @@ app.get("/", (req, res) => {
 });
 
 app.get("/redir", (req, res) => {
-  if ("code" in req.query === false)
-  {
+  const base = '</br> <a href="/">Go home</a>';
+  if ("code" in req.query) {
+    const code = req.query.code;
+    res.send(`authorization code is: <input type="text" value="${code}" readonly/> ${base}`);
+  } else if ("error" in req.query) {
+    const err = req.query.error.replace("_", " ");
+    res.send(`request failed because: ${err} ${base}`);
+  } else {
     res.redirect("/");
-    return;
   }
-
-  const code = req.query.code;
-  res.send(`authorization code is: <input type="text" value="${code}" readonly/> </br>
-            <a href="/">Go home</a>`);
 });
 
 app.get("/api/new_client", (req, res) => {
   const t = Date.now().toString();
   const h = hash(t);
-  pool.query(
-      "INSERT INTO Client VALUES (?)",
-      [ h ]
-  )
+  DB.insert_client(h)
     .then(result => {
       console.log(result);
       res.send({client_id: h});
@@ -61,22 +59,19 @@ app.get("/auth", (req, res) => {
   }
   const client_id = query.client_id;
 
-  pool.query(
-    "SELECT client_id FROM Client WHERE client_id=?",
-    [ client_id ]
-  )
-    .then(rows => {
-      if (rows.length == 0) {
+  if ("redirect_uri" in query === false) {
+    res.send("redirect_uri missing");
+  }
+  const redirect = query.redirect_uri;
+
+  // TODO: verify redirect is valid URI
+
+  DB.exists_client(client_id)
+    .then(exists => {
+      if (exists === false) {
         res.send("invalid client_id");
         return;
       }
-
-      if ("redirect_uri" in query === false) {
-        res.send("redirect_uri missing");
-      }
-      const redirect = query.redirect_uri;
-
-      // verify uri is valid
 
       if ("response_type" in query === false
           || query.response_type !== "code") {
@@ -87,23 +82,12 @@ app.get("/auth", (req, res) => {
       // use sha256(time + url) as the code
       const m = `${Date.now()}${req.url}`;
       const code = hash(m);
-      const expires = Date.now() + AUTH_EXPIRES;
-
-      pool.query(
-        "INSERT INTO Auth VALUES (?, ?, ?)",
-        [ code, client_id, expires ]
-      )
-        .then(result => {
-          console.log(result);
-          res.redirect(`${redirect}?code=${code}`);
-        })
-        .catch(err => {
-          throw err;
-        });
+      const expire = Date.now() + AUTH_EXPIRE;
+      DB.insert_auth(code, client_id, expire)
+        .then( () => res.redirect(`${redirect}?code=${code}`) )
+        .catch( () => res.redirect(`${redirect}?error=server_error`) );
     })
-    .catch(err => {
-      throw err;
-    });
+    .catch( () => res.redirect(`${redirect}?error=server_error`) );
 });
 
 app.listen(8080);
