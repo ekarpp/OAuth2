@@ -42,13 +42,8 @@ app.get("/api/new_client", (req, res) => {
   const t = Date.now().toString();
   const h = hash(t);
   DB.insert_client(h)
-    .then(result => {
-      console.log(result);
-      res.send({client_id: h});
-    })
-    .catch(err => {
-      throw err;
-    });
+    .then( () => res.send({client_id: h}) )
+    .catch( () => res.status(500).send("internal server error") );
 });
 
 app.get("/auth", (req, res) => {

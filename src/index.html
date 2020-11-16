@@ -64,7 +64,11 @@
         document.getElementById("output").value =
           `created client_id is: \n${id}`;
       })
-      .catch(console.log);
+      .catch( () => {
+        document.getElementById("output").value =
+          "encountered a server error while trying to create client.\n\
+please try again.";
+      });
   }
 
   function toggle_by_id(id) {
