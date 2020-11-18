@@ -2,7 +2,9 @@
 const AUTH_EXPIRE = 600 * 1000;
 
 const express = require("express");
+const cors = require("cors");
 const app = express();
+app.use(cors());
 
 const crypto = require("crypto");
 

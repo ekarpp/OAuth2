@@ -7,4 +7,8 @@ import { Component } from '@angular/core';
 })
 export class AppComponent {
   title = 'front';
+
+  output_message(msg: string) {
+    alert(msg);
+  }
 }

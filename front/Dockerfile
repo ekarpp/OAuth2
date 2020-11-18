@@ -9,7 +9,7 @@ RUN npm install
 
 COPY . .
 
-RUN npm run build
+RUN npm run prod
 
 # host the app
 FROM nginx:1.19
