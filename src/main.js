@@ -85,4 +85,4 @@ app.get("/api/auth", (req, res) => {
     .catch( () => res.redirect(`${redirect}?error=server_error`) );
 });
 
-app.listen(process.env.API_PORT);
+app.listen(8080);

@@ -8,4 +8,4 @@ RUN npm install
 
 COPY . .
 
-EXPOSE $API_PORT
+EXPOSE 8080
