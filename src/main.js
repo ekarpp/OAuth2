@@ -20,7 +20,7 @@ function hash(m) {
   h.update(m)
   return h.digest("hex")
 }
-
+/*
 app.get("/", (req, res) => {
   res.sendFile("index.html", {root: __dirname});
 });
@@ -37,7 +37,7 @@ app.get("/redir", (req, res) => {
     res.redirect("/");
   }
 });
-
+*/
 app.get("/api/new_client", (req, res) => {
   const t = Date.now().toString();
   const h = hash(t);
@@ -46,7 +46,7 @@ app.get("/api/new_client", (req, res) => {
     .catch( () => res.status(500).send("internal server error") );
 });
 
-app.get("/auth", (req, res) => {
+app.get("/api/auth", (req, res) => {
   const query = req.query;
 
   if ("client_id" in query === false) {
@@ -85,4 +85,4 @@ app.get("/auth", (req, res) => {
     .catch( () => res.redirect(`${redirect}?error=server_error`) );
 });
 
-app.listen(8080);
+app.listen(process.env.API_PORT);
