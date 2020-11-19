@@ -5,7 +5,6 @@ import { environment } from '../../environments/environment';
 @Component({
   selector: 'app-new-client',
   templateUrl: './new-client.component.html',
-  styleUrls: ['./new-client.component.css']
 })
 
 @Injectable()
