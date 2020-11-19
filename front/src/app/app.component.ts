@@ -1,4 +1,6 @@
 import { Component } from '@angular/core';
+import { MatDialog } from '@angular/material/dialog';
+import { MessageDialogComponent } from './message-dialog/message-dialog.component';
 
 @Component({
   selector: 'app-root',
@@ -8,7 +10,9 @@ import { Component } from '@angular/core';
 export class AppComponent {
   title = 'front';
 
+  constructor(public dialog: MatDialog) {}
+
   output_message(msg: string) {
-    alert(msg);
+    this.dialog.open(MessageDialogComponent, {data: {msg: msg}});
   }
 }
