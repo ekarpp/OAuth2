@@ -1,0 +1,19 @@
+<form [formGroup]="auth_form" (ngSubmit)="on_submit()">
+  <label>
+    Client id:
+    <input type="text" formControlName="client_id">
+  </label>
+
+  <label>
+    Redirect URI:
+    <input type="text" formControlName="redirect_uri">
+  </label>
+
+  <label>
+    Response type:
+    <input type="text" formControlName="response_type" readonly>
+  </label>
+
+  <button type="submit">Get authorization code</button>
+</form>
+
