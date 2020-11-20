@@ -1,19 +1,22 @@
-<form [formGroup]="auth_form" (ngSubmit)="on_submit()">
-  <label>
-    Client id:
-    <input type="text" formControlName="client_id">
-  </label>
+<form [formGroup]="auth_form" (ngSubmit)="on_submit()" style="margin: 10px;">
+  <mat-form-field appearance="standard">
+    <mat-label>Client ID</mat-label>
+    <input matInput type="text" formControlName="client_id">
+  </mat-form-field>
+  <br>
 
-  <label>
-    Redirect URI:
-    <input type="text" formControlName="redirect_uri">
-  </label>
+  <mat-form-field appearance="standard">
+    <mat-label>Redirect URI</mat-label>
+    <input matInput type="text" formControlName="redirect_uri">
+  </mat-form-field>
+  <br>
 
-  <label>
-    Response type:
-    <input type="text" formControlName="response_type" readonly>
-  </label>
+  <mat-form-field appearance="standard">
+    <mat-label>Response type</mat-label>
+    <input matInput type="text" formControlName="response_type" readonly>
+  </mat-form-field>
+  <br>
 
-  <button type="submit">Get authorization code</button>
+  <button mat-flat-button color="primary" type="submit">Get authorization code</button>
 </form>
 
