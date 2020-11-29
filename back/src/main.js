@@ -1,10 +1,18 @@
 // how many milliseconds are authorization codes valid for
 const AUTH_EXPIRE = 600 * 1000;
 
+// how many milliseconds are access tokens valid for
+const ACCESS_EXPIRE = 3600 * 1000;
+
+// defined in db.sql
+const REDIR_MAX_LEN = 128;
+
 const express = require("express");
 const cors = require("cors");
+const body_parser = require("body-parser");
 const app = express();
 app.use(cors());
+app.use(body_parser.urlencoded({extended: true}));
 
 const crypto = require("crypto");
 
@@ -40,6 +48,23 @@ app.get("/redir", (req, res) => {
   }
 });
 */
+
+/*
+  checks that $body contains all strings in $params
+  if not, return missing parameter
+*/
+function param_missing(body, params) {
+  for (const param of params) {
+    if (param in body === false)
+      return param;
+  }
+  return false;
+}
+
+function base_missing(body) {
+  return param_missing(body, ["client_id", "redirect_uri"]);
+}
+
 app.get("/api/new_client", (req, res) => {
   const t = Date.now().toString();
   const h = hash(t);
@@ -51,15 +76,20 @@ app.get("/api/new_client", (req, res) => {
 app.get("/api/auth", (req, res) => {
   const query = req.query;
 
-  if ("client_id" in query === false) {
-    res.send("client_id missing");
+  const missing = param_missing(query, ["client_id", "redirect_uri"]);
+  if (missing !== false) {
+    res.send(`${missing} missing`);
+    return;
   }
-  const client_id = query.client_id;
 
-  if ("redirect_uri" in query === false) {
-    res.send("redirect_uri missing");
-  }
+
+  const client_id = query.client_id;
   const redirect = query.redirect_uri;
+  // limit allowing arbitrary length uris in the database
+  if (redirect.length > REDIR_MAX_LEN) {
+    res.redirect(`${redirect}?error=invalid_request`);
+    return;
+  }
 
   // TODO: verify redirect is valid URI
 
@@ -80,11 +110,64 @@ app.get("/api/auth", (req, res) => {
       const m = `${Date.now()}${req.url}`;
       const code = hash(m);
       const expire = Date.now() + AUTH_EXPIRE;
-      DB.insert_auth(code, client_id, expire)
+      DB.insert_auth(code, client_id, redirect, expire)
         .then( () => res.redirect(`${redirect}?code=${code}`) )
         .catch( () => res.redirect(`${redirect}?error=server_error`) );
     })
     .catch( () => res.redirect(`${redirect}?error=server_error`) );
+});
+
+app.post("/api/token", (req, res) => {
+  const body = req.body;
+
+  const required = ["redirect_uri", "client_id", "grant_type", "code"];
+  const missing = param_missing(body, required);
+  if (missing !== false) {
+    res.json({error: `${missing} missing from request`});
+    return;
+  }
+
+  if (body.grant_type !== "authorization_code") {
+    res.json({error: "invalid grant_type"});
+    return;
+  }
+
+  const client_id = body.client_id;
+  const redirect = body.redirect_uri;
+  const code = body.code;
+
+  DB.auth_ok(client_id, redirect, code)
+    .then(expire_time => {
+      if (expire_time === false) {
+        res.json({error: "invalid credentials"});
+        return;
+      }
+
+      if (Date.now() > expire_time) {
+        res.json({error: "expired authorization code"});
+        return;
+      }
+
+      var m = `${Math.random()}${client_id}`;
+      const token = hash(m);
+
+      m = `${Math.random()}${code}`;
+      const refresh = hash(m);
+
+      const expires = Date.now() + ACCESS_EXPIRE;
+
+      DB.insert_access(token, refresh, expires)
+        .then( () => {
+          res.json({
+            access_token: token,
+            token_type: "Bearer",
+            expires_in: expires,
+            refresh_token: refresh
+          });
+        })
+        .catch( () => res.json({error: "server error"}) );
+    })
+    .catch( () => res.json({error: "server error"}) );
 });
 
 app.listen(8080);

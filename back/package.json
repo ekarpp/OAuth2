@@ -8,7 +8,8 @@
   "dependencies": {
     "express": ">=4.17",
     "mariadb": ">=2.5",
-    "cors": ">=2.8.5"
+    "cors": ">=2.8.5",
+    "body-parser": ">=1.19"
   },
   "scripts": {
     "start": "node src/main.js"
