@@ -31,10 +31,6 @@ function hash(m) {
   return h.digest("hex")
 }
 /*
-app.get("/", (req, res) => {
-  res.sendFile("index.html", {root: __dirname});
-});
-
 app.get("/redir", (req, res) => {
   const base = '</br> <a href="/">Go home</a>';
   if ("code" in req.query) {
@@ -61,10 +57,7 @@ function param_missing(body, params) {
   return false;
 }
 
-function base_missing(body) {
-  return param_missing(body, ["client_id", "redirect_uri"]);
-}
-
+// endpoint for new client creation
 app.get("/api/new_client", (req, res) => {
   const t = Date.now().toString();
   const h = hash(t);
@@ -73,6 +66,7 @@ app.get("/api/new_client", (req, res) => {
     .catch( () => res.status(500).send("internal server error") );
 });
 
+// endpoint for authorization code granting
 app.get("/api/auth", (req, res) => {
   const query = req.query;
 
@@ -106,8 +100,8 @@ app.get("/api/auth", (req, res) => {
         return;
       }
 
-      // use sha256(time + url) as the code
-      const m = `${Date.now()}${req.url}`;
+      // use sha256(Math.random() + url) as the code
+      const m = `${Math.random()}${req.url}`;
       const code = hash(m);
       const expire = Date.now() + AUTH_EXPIRE;
       DB.insert_auth(code, client_id, redirect, expire)
@@ -117,6 +111,7 @@ app.get("/api/auth", (req, res) => {
     .catch( () => res.redirect(`${redirect}?error=server_error`) );
 });
 
+// endpoint for access token granting
 app.post("/api/token", (req, res) => {
   const body = req.body;
 

@@ -11,12 +11,13 @@ module.exports =  class DB {
   }
 
   insert_client(client_id) {
-    return this.pool.query("INSERT INTO Client VALUES (?)", [ client_id ])
+    return this.pool.query("INSERT INTO Client(client_id) VALUES (?)", [ client_id ])
       .catch(this.error_handler);
   }
 
   insert_auth(code, id, redirect, expire) {
-    return this.pool.query("INSERT INTO Auth VALUES (?, ?, ?, ?)", [ code, id, redirect, expire ])
+    const qr = "INSERT INTO Auth(code, client_id, redirect_uri, expires) VALUES (?, ?, ?, ?)";
+    return this.pool.query(qr, [ code, id, redirect, expire ])
       .catch(this.error_handler);
   }
 
